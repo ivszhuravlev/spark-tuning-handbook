@@ -151,7 +151,3 @@ Spark UI (after PySpark starts): [http://localhost:4040](http://localhost:4040)
 | `$env:PYSPARK_DRIVER_PYTHON = "jupyter"` | Launch PySpark driver as JupyterLab |
 | `pyspark --master spark://localhost:7077` | Start PySpark connected to Standalone cluster |
 | [http://localhost:4040](http://localhost:4040) | Open Spark application UI |
-
-You might also need to run
-[Environment]::SetEnvironmentVariable("PYSPARK_PYTHON", "python", "User")
-[Environment]::SetEnvironmentVariable("PYSPARK_DRIVER_PYTHON", "python", "User")
