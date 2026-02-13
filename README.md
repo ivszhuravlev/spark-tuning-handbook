@@ -69,7 +69,7 @@ https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
 
 ## Windows (Company Laptop): Local Spark Standalone + JupyterLab
 
-A minimal, command-only guide to download Spark 4.1.1 (Hadoop 3 build), start a local Standalone master + two workers, and launch PySpark in JupyterLab.
+A minimal, command-only guide to download Spark 4.1.1 (Hadoop 3 build), start a local Standalone master + two workers, and launch PySpark in JupyterLab. Details: https://spark.apache.org/docs/latest/spark-standalone.html
 
 ### Prerequisites
 
@@ -151,3 +151,7 @@ Spark UI (after PySpark starts): [http://localhost:4040](http://localhost:4040)
 | `$env:PYSPARK_DRIVER_PYTHON = "jupyter"` | Launch PySpark driver as JupyterLab |
 | `pyspark --master spark://localhost:7077` | Start PySpark connected to Standalone cluster |
 | [http://localhost:4040](http://localhost:4040) | Open Spark application UI |
+
+You might also need to run
+[Environment]::SetEnvironmentVariable("PYSPARK_PYTHON", "python", "User")
+[Environment]::SetEnvironmentVariable("PYSPARK_DRIVER_PYTHON", "python", "User")
