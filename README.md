@@ -31,25 +31,21 @@ https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
 - Reading and interpreting execution plans (`.explain()`)
 - Cost-Based Optimization (CBO) vs. rule-based
 
-### 03 - Shuffle
+### 03 - Shuffle, Joins, Partitioning & Data Organization
 - What is a shuffle, when does it happen, and why is it expensive
 - Minimizing and optimizing shuffle
-
-### 04 - Joins
 - Join strategies: Broadcast Hash, Sort-Merge, Shuffle Hash
 - Broadcast joins in depth
 - Handling data skew in joins
-
-### 05 - Partitioning & Data Organization
 - `repartition()` vs. `coalesce()`
 - Partitioning vs. bucketing
 
-### 06 - Memory Management & Troubleshooting
+### 04 - Memory Management & Troubleshooting
 - Spark's memory model (execution vs. storage memory)
 - Diagnosing and fixing OOM errors
 - Tungsten execution engine & UDF performance
 
-### 07 - Performance Tuning & Operations
+### 05 - Performance Tuning & Operations
 - Adaptive Query Execution (AQE)
 - Broadcast variables and accumulators
 - Dynamic resource allocation
