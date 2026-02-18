@@ -85,15 +85,11 @@ Download and extract:
 
 ### PowerShell - environment setup
 
-> Replace the placeholder paths with your own.
+Set User variables once via Windows Environment Variables.
 
-```powershell
-# Example placeholder path (replace)
-$env:SPARK_HOME = "C:\path\to\spark-4.1.1-bin-hadoop3"
+**Create variable**: SPARK_HOME = C:\path\to\spark-x.x.x-bin-hadoop3
 
-# Add Spark to PATH for this PowerShell session
-$env:PATH = "$env:SPARK_HOME\bin;$env:PATH"
-```
+**Edit Path variable and add**: %SPARK_HOME%\bin
 
 ### Start Standalone Master and two Workers
 
