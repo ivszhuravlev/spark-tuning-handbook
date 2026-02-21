@@ -15,6 +15,9 @@ https://huggingface.co/datasets/mitulshah/transaction-categorization
 FreshRetailNet-50K (Retail Sales)
 https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
 
+NYC Yellow Taxi Trip Records (2024)
+https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+
 ---
 
 ## Topics
