@@ -129,7 +129,7 @@ cd C:\path\to\your\project
 $env:PYSPARK_DRIVER_PYTHON = "jupyter"
 $env:PYSPARK_DRIVER_PYTHON_OPTS = "lab"
 
-pyspark --master spark://localhost:7077
+pyspark --master spark://localhost:7077 --conf spark.sql.catalogImplementation=hive
 ```
 
 Spark UI (after PySpark starts): [http://localhost:4040](http://localhost:4040)
