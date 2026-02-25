@@ -3,3 +3,5 @@ spark-warehouse/
 metastore_db/
 .ipynb_checkpoints/
 __pycache__/
+derby.log
+metastore_db/
