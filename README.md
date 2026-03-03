@@ -57,6 +57,8 @@ https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 ---
 
+**Note**: Adaptive Query Execution (AQE) is a runtime optimization layer on top of Spark’s core physical execution model. We deliberately study Spark with AQE disabled initially to build a deterministic understanding of how plans are generated and executed. AQE can improve performance in many cases, but it does not replace the need to understand fundamental execution mechanisms such as shuffle, partitioning, join strategies, and resource behavior.
+
 ## Environment
 
 - Local Spark Standalone cluster (Windows)
