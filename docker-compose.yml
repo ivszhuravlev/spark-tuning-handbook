@@ -1,0 +1,83 @@
+services:
+  spark-master:
+    image: apache/spark:4.0.2-python3
+    container_name: spark-master
+    hostname: spark-master
+    entrypoint: /opt/spark/bin/spark-class
+    command: >
+      org.apache.spark.deploy.master.Master
+      --host spark-master
+      --port 7077
+      --webui-port 8080
+    ports:
+      - "${SPARK_MASTER_WEBUI_PORT:-8080}:8080"
+      - "${SPARK_MASTER_PORT:-7077}:7077"
+    volumes:
+      - spark-warehouse:/opt/spark/work-dir/spark-warehouse
+
+  spark-worker-1:
+    image: apache/spark:4.0.2-python3
+    entrypoint: /opt/spark/bin/spark-class
+    command: >
+      org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+      --cores ${SPARK_WORKER_CORES:-2}
+      --memory ${SPARK_WORKER_MEMORY:-2g}
+      --webui-port 8081
+    ports:
+      - "8081:8081"
+    depends_on:
+      - spark-master
+    volumes:
+      - ./data:/data:ro
+      - spark-warehouse:/opt/spark/work-dir/spark-warehouse
+
+  spark-worker-2:
+    image: apache/spark:4.0.2-python3
+    entrypoint: /opt/spark/bin/spark-class
+    command: >
+      org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+      --cores ${SPARK_WORKER_CORES:-2}
+      --memory ${SPARK_WORKER_MEMORY:-2g}
+      --webui-port 8082
+    ports:
+      - "8082:8082"
+    depends_on:
+      - spark-master
+    volumes:
+      - ./data:/data:ro
+      - spark-warehouse:/opt/spark/work-dir/spark-warehouse
+
+  jupyter:
+    image: apache/spark:4.0.2-python3
+    container_name: spark-jupyter
+    user: root
+    environment:
+      PYSPARK_DRIVER_PYTHON: jupyter
+      PYSPARK_DRIVER_PYTHON_OPTS: "lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token='' --ServerApp.password='' --notebook-dir=/notebooks"
+    entrypoint: /bin/bash
+    command: >
+      -c "pip install -q jupyterlab &&
+          /opt/spark/bin/pyspark
+          --master spark://spark-master:7077
+          --conf spark.sql.catalogImplementation=hive
+          --conf spark.sql.adaptive.enabled=false
+          --conf spark.sql.shuffle.partitions=8"
+    ports:
+      - "${JUPYTER_PORT:-8888}:8888"
+      - "${SPARK_APP_UI_PORT:-4040}:4040"
+    volumes:
+      - ./notebooks:/notebooks
+      - ./data:/data
+      - spark-warehouse:/opt/spark/work-dir/spark-warehouse
+      - hive-metastore:/opt/spark/work-dir/metastore_db
+    working_dir: /notebooks
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - spark-worker-2
+
+volumes:
+  spark-warehouse:
+  hive-metastore:
