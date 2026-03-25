@@ -61,10 +61,98 @@ https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
 ## Environment
 
-- Local Spark Standalone cluster (Windows)
-- 2 Workers
+- Local Spark Standalone cluster — 2 workers, 2 cores each, 2 GB each
 - Jupyter Driver connected to `spark://localhost:7077`
 - Public datasets from Hugging Face
+- Supported: Windows (native), Mac/Linux (Docker)
+
+---
+
+## Mac / Linux: Docker
+
+Runs a full Standalone cluster (master + 2 workers + JupyterLab) in Docker. No local Java or Spark installation required. Apple Silicon (M1/M2/M3) is supported.
+
+### Prerequisites
+
+- Docker Desktop
+
+### Python dependencies
+
+Install pandas and PyArrow inside the Jupyter container (required for Pandas UDF demos in notebook 04):
+
+```bash
+docker compose exec jupyter pip install pandas pyarrow
+```
+
+Run this once after `docker compose up -d`. No restart needed.
+
+### Start
+
+```bash
+docker compose up -d
+```
+
+- JupyterLab: http://localhost:8888 (no token or password)
+- Spark Master UI: http://localhost:8080
+- Spark App UI: http://localhost:4040 (after first notebook run)
+
+### Stop
+
+```bash
+docker compose down
+```
+
+### Other commands
+
+```bash
+docker compose logs -f          # tail all container logs
+docker compose exec jupyter bash # shell inside Jupyter container
+docker compose ps               # show running containers
+```
+
+### Datasets
+
+Place datasets in the `data/` directory before starting notebooks:
+
+```
+data/
+├── transaction_cat.parquet     # HuggingFace: mitulshah/transaction-categorization
+├── retail_net.parquet          # HuggingFace: Dingdong-Inc/FreshRetailNet-50K
+└── taxi/
+    ├── yellow_tripdata_2024-01.parquet
+    └── ... (through 2024-12)   # https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
+```
+
+Download HuggingFace datasets with `huggingface-cli` (run `huggingface-cli login` first if needed):
+
+```bash
+hf download \
+mitulshah/transaction-categorization \
+default/train/0000.parquet \
+--repo-type dataset \
+--local-dir data
+
+mv data/default/train/0000.parquet data/transaction_cat.parquet
+rm -rf data/default
+
+hf download \
+Dingdong-Inc/FreshRetailNet-50K \
+data/train.parquet \
+--repo-type dataset \
+--local-dir data
+
+mv data/data/train.parquet data/retail_net.parquet
+rm -rf data/data
+```
+
+Taxi files can be downloaded directly:
+
+```bash
+for m in $(seq -w 1 12); do
+  curl -O --output-dir data/taxi \
+    "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-${m}.parquet"
+done
+```
 
 ---
 
@@ -76,9 +164,9 @@ A minimal, command-only guide to download Spark 4.1.1 (Hadoop 3 build), start a 
 
 - Java (JDK) 17+
 - Python 3.10+
-- JupyterLab:
+- JupyterLab and pandas:
   ```powershell
-  python -m pip install jupyterlab
+  python -m pip install jupyterlab pandas pyarrow
   ```
 
 ### Download Spark
