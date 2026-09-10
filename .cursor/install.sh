@@ -28,7 +28,9 @@ prepull_image() {
   local started=0
   if ! sudo docker info >/dev/null 2>&1; then
     echo "[install] Starting temporary dockerd to pre-pull ${COMPOSE_IMAGE}..."
-    sudo bash -c 'nohup dockerd >/tmp/dockerd-install.log 2>&1 &'
+    # Clear any stale pidfile/log so a fresh daemon can start (see start.sh for details).
+    sudo rm -f /var/run/docker.pid /tmp/spark-handbook-dockerd-install.log 2>/dev/null || true
+    sudo bash -c 'nohup dockerd >/tmp/spark-handbook-dockerd-install.log 2>&1 &'
     started=1
     for _ in $(seq 1 30); do sudo docker info >/dev/null 2>&1 && break; sleep 1; done
   fi

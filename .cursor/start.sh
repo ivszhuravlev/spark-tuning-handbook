@@ -10,19 +10,25 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 COMPOSE=(sudo docker compose -f "${REPO_ROOT}/docker-compose.yml")
 
+DOCKERD_LOG=/tmp/spark-handbook-dockerd.log
+
 start_dockerd() {
   if sudo docker info >/dev/null 2>&1; then
     echo "[start] dockerd already running."
     return
   fi
   echo "[start] Starting dockerd..."
-  sudo bash -c 'nohup dockerd >/tmp/dockerd.log 2>&1 &'
+  # A snapshot or prior boot can leave a stale pidfile (dockerd then refuses to start) and a
+  # log file at a fixed path that the redirect cannot reopen. Clear both first (root removes
+  # regardless of owner) so startup is robust across reboots and prebuilt-snapshot boots.
+  sudo rm -f /var/run/docker.pid "$DOCKERD_LOG" 2>/dev/null || true
+  sudo bash -c "nohup dockerd >'$DOCKERD_LOG' 2>&1 &"
   for _ in $(seq 1 60); do
     sudo docker info >/dev/null 2>&1 && { echo "[start] dockerd is up."; return; }
     sleep 1
   done
   echo "[start] ERROR: dockerd did not become ready." >&2
-  sudo tail -n 40 /tmp/dockerd.log >&2 2>/dev/null || true
+  sudo tail -n 40 "$DOCKERD_LOG" >&2 2>/dev/null || true
   exit 1
 }
 
