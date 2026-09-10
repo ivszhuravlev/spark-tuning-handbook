@@ -1,0 +1,19 @@
+{
+  "name": "Spark Tuning Handbook",
+  "install": "bash .cursor/install.sh",
+  "start": "bash .cursor/start.sh",
+  "terminals": [
+    {
+      "name": "spark-cluster",
+      "command": "sudo docker compose -f docker-compose.yml logs -f",
+      "description": "Live logs for the Spark Standalone cluster (master + 2 workers) and JupyterLab, run via docker-compose.yml. JupyterLab: http://localhost:8888/lab (no token). Spark Master UI: http://localhost:8080. Spark App UI: http://localhost:4040 after a notebook runs."
+    }
+  ],
+  "ports": [
+    { "name": "JupyterLab", "port": 8888 },
+    { "name": "Spark Master UI", "port": 8080 },
+    { "name": "Spark Worker 1 UI", "port": 8081 },
+    { "name": "Spark Worker 2 UI", "port": 8082 },
+    { "name": "Spark Application UI", "port": 4040 }
+  ]
+}
