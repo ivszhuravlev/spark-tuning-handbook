@@ -78,18 +78,16 @@ Runs a full Standalone cluster (master + 2 workers + JupyterLab) in Docker. No l
 
 ### Python dependencies
 
-Install pandas and PyArrow inside the Jupyter container (required for Pandas UDF demos in notebook 04):
+pandas and PyArrow are installed in the Jupyter image (`docker/jupyter/Dockerfile`) so notebook 04 Pandas UDF demos work without a runtime `pip install`. Rebuild after changing that file:
 
 ```bash
-docker compose exec jupyter pip install pandas pyarrow
+docker compose build jupyter
 ```
-
-Run this once after `docker compose up -d`. No restart needed.
 
 ### Start
 
 ```bash
-docker compose up -d
+docker compose up --build -d
 ```
 
 - JupyterLab: http://localhost:8888 (no token or password)
@@ -112,7 +110,17 @@ docker compose ps               # show running containers
 
 ### Datasets
 
-Place datasets in the `data/` directory before starting notebooks:
+Place datasets in the `data/` directory before starting notebooks.
+
+`mitulshah/transaction-categorization` is **gated** on Hugging Face: `hf download` returns 401 until you run `hf auth login` and accept the dataset terms on the Hub page. NYC taxi files are public and do not need a token.
+
+If you cannot access the gated dataset, generate a schema-compatible sample (row counts will differ from saved notebook outputs):
+
+```bash
+python scripts/generate_transaction_cat_sample.py
+```
+
+Expected layout:
 
 ```
 data/
@@ -123,7 +131,7 @@ data/
     └── ... (through 2024-12)   # https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 ```
 
-Download HuggingFace datasets with `huggingface-cli` (run `huggingface-cli login` first if needed):
+Download HuggingFace datasets with `hf` (run `hf auth login` first if needed, and accept gated-dataset terms):
 
 ```bash
 hf download \
