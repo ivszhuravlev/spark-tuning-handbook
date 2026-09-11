@@ -62,6 +62,7 @@ def create_spark():
         .master(master)
         .config("spark.sql.adaptive.enabled", "false")
         .config("spark.sql.shuffle.partitions", "8")
+        .config("spark.executor.memory", os.getenv("SPARK_EXECUTOR_MEMORY", "2g"))
         .config("spark.ui.port", ui_port)
         .config("spark.ui.showConsoleProgress", "true")
     )

@@ -1,1 +1,1 @@
-"""Production-style Spark jobs used by skill-tests/launch.py."""
+"""Batch jobs submitted by skill-tests/launch.py."""
