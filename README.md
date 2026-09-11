@@ -61,6 +61,21 @@ Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet.
 
 **Note**: Adaptive Query Execution (AQE) is a runtime optimization layer on top of Spark’s core physical execution model. We deliberately study Spark with AQE disabled initially to build a deterministic understanding of how plans are generated and executed. AQE can improve performance in many cases, but it does not replace the need to understand fundamental execution mechanisms such as shuffle, partitioning, join strategies, and resource behavior.
 
+## Agent skills
+
+Handbook knowledge for another agent lives in `.cursor/skills/` (one folder per skill, `SKILL.md` in each). These are what `skill-tests/` evaluates. Load them before diagnosing the batch jobs.
+
+| Skill | Notebook |
+| --- | --- |
+| `spark-tuning-handbook` | router (when to load the rest) |
+| `spark-architecture-execution` | 01 |
+| `spark-catalyst-planning` | 02 |
+| `spark-shuffle-joins` | 03 |
+| `spark-memory-troubleshooting` | 04 |
+| `spark-aqe-operations` | 05 |
+
+Index: `skills/README.md`.
+
 ## Environment
 
 - Local Spark Standalone cluster — 2 workers, 2 cores each, 2 GB each
@@ -177,7 +192,7 @@ done
 
 ### Skill-test jobs
 
-Assignment for a separate pass over the cluster: `skill-tests/TASK.md`. Run from the Jupyter container so the driver stays on the Compose network.
+Eval harness for the agent skills above. Assignment: `skill-tests/TASK.md`. Load `.cursor/skills/` first, then run from the Jupyter container so the driver stays on the Compose network.
 
 ### Troubleshooting (Mac)
 
