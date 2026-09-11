@@ -8,3 +8,5 @@ skill-tests/ANSWER_KEY.md
 skill-tests/workloads_fixed/
 skill-tests/local/
 skill-tests/bench-out/
+**/*.local.md
+databricks/etl-lab/TEST_RECORD.local.md

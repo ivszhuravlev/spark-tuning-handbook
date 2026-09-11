@@ -27,14 +27,31 @@ dbutils.widgets.text(
     "out_dir",
     "hive_metastore.spark_tuning_test",
 )
-dbutils.widgets.text(
-    "jobs_dir",
-    "",
-)
+dbutils.widgets.text("jobs_dir", "")
+
+
+def _resolve_jobs_dir(raw):
+    if raw:
+        return raw
+    try:
+        nb = (
+            dbutils.notebook.entry_point.getDbutils()
+            .notebook()
+            .getContext()
+            .notebookPath()
+            .get()
+        )
+        folder = nb.rsplit("/", 1)[0]
+        if not folder.startswith("/Workspace"):
+            folder = "/Workspace" + folder
+        return folder + "/jobs"
+    except Exception:
+        return "/Workspace/Shared/spark-etl-lab/jobs"
+
 
 TXN_PATH = dbutils.widgets.get("txn_path").strip()
 OUT_DIR = dbutils.widgets.get("out_dir").strip().rstrip("/")
-JOBS_DIR = dbutils.widgets.get("jobs_dir").strip()
+JOBS_DIR = _resolve_jobs_dir(dbutils.widgets.get("jobs_dir").strip())
 
 REQUIRED_COLS = ["transaction_description", "category", "country", "currency"]
 
