@@ -12,7 +12,6 @@ def run(spark: SparkSession, txn_path: str, out_dir: str) -> int:
     spark.conf.set("spark.sql.shuffle.partitions", "8")
     try:
         txn = spark.read.parquet(txn_path)
-        # Handbook 03 pattern: almost all rows share one join key.
         left = txn.withColumn(
             "join_key",
             when(rand(seed=1) < 0.98, lit("HOT")).otherwise(col("category")),

@@ -1,8 +1,11 @@
 services:
   spark-master:
     image: apache/spark:4.0.2-python3
+    platform: linux/amd64
     container_name: spark-master
     hostname: spark-master
+    environment:
+      SPARK_LOCAL_HOSTNAME: spark-master
     entrypoint: /opt/spark/bin/spark-class
     command:
       - org.apache.spark.deploy.master.Master
@@ -32,6 +35,10 @@ services:
 
   spark-worker-1:
     image: apache/spark:4.0.2-python3
+    platform: linux/amd64
+    hostname: spark-worker-1
+    environment:
+      SPARK_LOCAL_HOSTNAME: spark-worker-1
     entrypoint: /opt/spark/bin/spark-class
     command:
       - org.apache.spark.deploy.worker.Worker
@@ -49,11 +56,15 @@ services:
         condition: service_healthy
     restart: on-failure
     volumes:
-      - ./data:/data:ro
+      - ./data:/data
       - spark-warehouse:/opt/spark/work-dir/spark-warehouse
 
   spark-worker-2:
     image: apache/spark:4.0.2-python3
+    platform: linux/amd64
+    hostname: spark-worker-2
+    environment:
+      SPARK_LOCAL_HOSTNAME: spark-worker-2
     entrypoint: /opt/spark/bin/spark-class
     command:
       - org.apache.spark.deploy.worker.Worker
@@ -71,7 +82,7 @@ services:
         condition: service_healthy
     restart: on-failure
     volumes:
-      - ./data:/data:ro
+      - ./data:/data
       - spark-warehouse:/opt/spark/work-dir/spark-warehouse
 
   jupyter:
@@ -79,12 +90,18 @@ services:
       context: ./docker/jupyter
       dockerfile: Dockerfile
     image: spark-handbook-jupyter:4.0.2
+    platform: linux/amd64
     container_name: spark-jupyter
+    hostname: spark-jupyter
     user: root
     environment:
       PYSPARK_DRIVER_PYTHON: jupyter
       PYSPARK_DRIVER_PYTHON_OPTS: "lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --ServerApp.token='' --ServerApp.password='' --notebook-dir=/notebooks"
+      SPARK_LOCAL_HOSTNAME: spark-jupyter
+      SPARK_DRIVER_HOST: spark-jupyter
+      SPARK_MASTER: spark://spark-master:7077
       SPARK_TUNING_DATA_DIR: /data
+      SKILL_TEST_OUT: /data/tmp/skill-tests-out
     entrypoint: ["/opt/spark/bin/pyspark"]
     command:
       - --master
@@ -95,12 +112,18 @@ services:
       - spark.sql.adaptive.enabled=false
       - --conf
       - spark.sql.shuffle.partitions=8
+      - --conf
+      - spark.driver.host=spark-jupyter
+      - --conf
+      - spark.driver.bindAddress=0.0.0.0
     ports:
       - "${JUPYTER_PORT:-8888}:8888"
       - "${SPARK_APP_UI_PORT:-4040}:4040"
     volumes:
       - ./notebooks:/notebooks
       - ./data:/data
+      - ./skill-tests:/skill-tests
+      - ./scripts:/scripts
       - spark-warehouse:/opt/spark/work-dir/spark-warehouse
       - hive-metastore:/opt/spark/work-dir/metastore_db
     working_dir: /notebooks

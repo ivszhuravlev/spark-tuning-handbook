@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Submit the skill-test workloads against a local Standalone cluster."""
+"""Submit the skill-test workloads against the handbook Spark cluster."""
 
 from __future__ import annotations
 
 import json
 import os
+import socket
 import sys
 import time
 import traceback
@@ -18,29 +19,58 @@ sys.path.insert(0, str(ROOT / "skill-tests"))
 from workloads import country_overlap, daily_txn_enrich, fx_lookup_join, hotkey_rollup, qc_reject
 
 
-def txn_path() -> Path:
+def data_dir() -> Path:
     env = os.getenv("SPARK_TUNING_DATA_DIR")
-    data = Path(env) if env else ROOT / "data"
-    path = data / "transaction_cat.parquet"
+    return Path(env) if env else ROOT / "data"
+
+
+def txn_path() -> Path:
+    path = data_dir() / "transaction_cat.parquet"
     if not path.exists():
-        raise SystemExit(f"missing {path}")
+        raise SystemExit(
+            f"missing {path}\n"
+            "Create samples with: python scripts/prepare_local_data.py\n"
+            "From Docker: docker compose exec jupyter python /scripts/prepare_local_data.py"
+        )
     return path
+
+
+def default_master() -> str:
+    env = os.getenv("SPARK_MASTER")
+    if env:
+        return env
+    try:
+        socket.getaddrinfo("spark-master", 7077)
+        return "spark://spark-master:7077"
+    except OSError:
+        return "spark://127.0.0.1:7077"
 
 
 def create_spark():
     from pyspark.sql import SparkSession
 
-    master = os.getenv("SPARK_MASTER", "spark://127.0.0.1:7077")
+    existing = SparkSession.getActiveSession()
+    if existing is not None:
+        existing.conf.set("spark.sql.adaptive.enabled", "false")
+        existing.conf.set("spark.sql.shuffle.partitions", "8")
+        return existing, False
+
+    master = default_master()
     ui_port = os.getenv("SPARK_APP_UI_PORT", "4040")
-    return (
+    builder = (
         SparkSession.builder.appName("handbook-skill-tests")
         .master(master)
         .config("spark.sql.adaptive.enabled", "false")
         .config("spark.sql.shuffle.partitions", "8")
         .config("spark.ui.port", ui_port)
         .config("spark.ui.showConsoleProgress", "true")
-        .getOrCreate()
     )
+    driver_host = os.getenv("SPARK_DRIVER_HOST")
+    if driver_host:
+        builder = builder.config("spark.driver.host", driver_host).config(
+            "spark.driver.bindAddress", os.getenv("SPARK_DRIVER_BIND", "0.0.0.0")
+        )
+    return builder.getOrCreate(), True
 
 
 def ui_base(spark) -> str:
@@ -137,13 +167,15 @@ def snapshot(spark) -> dict:
 
 
 def main() -> int:
-    out_dir = os.getenv("SKILL_TEST_OUT", "/tmp/skill-tests-out")
+    out_dir = os.getenv("SKILL_TEST_OUT", str(data_dir() / "tmp" / "skill-tests-out"))
     Path(out_dir).mkdir(parents=True, exist_ok=True)
     path = str(txn_path())
-    spark = create_spark()
+    spark, owned = create_spark()
     print("UI", ui_base(spark))
     print("app", spark.sparkContext.applicationId)
+    print("master", spark.sparkContext.master)
     print("txn", path)
+    print("out", out_dir)
 
     runs = [
         ("daily_txn_enrich", daily_txn_enrich.run),
@@ -179,7 +211,8 @@ def main() -> int:
                 time.sleep(30)
         except KeyboardInterrupt:
             pass
-    spark.stop()
+    if owned and not keep:
+        spark.stop()
     return 0
 
 

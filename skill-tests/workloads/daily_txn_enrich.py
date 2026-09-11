@@ -7,7 +7,6 @@ from pyspark.sql.functions import col, explode, array_repeat, lit, length, avg, 
 def run(spark: SparkSession, txn_path: str, out_dir: str) -> int:
     spark.sparkContext.setJobGroup("daily_txn_enrich", "daily_txn_enrich")
     df = spark.read.parquet(txn_path)
-    # Fan-out then a full redistribute before a cheap aggregation.
     fanned = df.withColumn("_dup", explode(array_repeat(lit(1), 12))).drop("_dup")
     result = (
         fanned.withColumn("desc_len", length(col("transaction_description")))

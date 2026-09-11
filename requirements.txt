@@ -1,3 +1,5 @@
 jupyterlab>=4.0
 pyspark==4.0.2
 pyarrow>=14.0
+numpy>=1.26
+pandas>=2.0
