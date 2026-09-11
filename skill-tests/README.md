@@ -1,6 +1,6 @@
 # Skill tests
 
-Batch jobs used with the handbook cluster. The assignment prompt is `TASK.md`.
+Eval harness for the handbook **agent skills** in `.cursor/skills/`. Load those skills, then run the jobs. The assignment prompt is `TASK.md` (no solutions in this folder).
 
 From the Jupyter container (this is the Mac/Linux Docker path):
 
