@@ -9,15 +9,9 @@ Tune from **runtime evidence**, then code. Wall-clock without a plan is not a di
 
 Spark executes **jobs → stages → tasks**. An action submits a job. A shuffle (`Exchange`) opens a new stage. One partition in that stage is one task. If you cannot name the expensive stage and why it shuffled, you are not tuning yet.
 
-## Where to look (Databricks)
+## Where to look
 
-Use the Spark UI of **this run**, not a guess from source:
-
-- Job run → **Spark UI**
-- Interactive cluster → **Spark UI**
-- SQL warehouse → **Query History** → query → **query profile** (same stories: scans, joins, shuffles, rows)
-
-Tabs that matter:
+Use the Spark UI (or equivalent query profile) of **this run**, not a guess from source. Same tabs everywhere the driver UI is exposed: standalone, YARN, Kubernetes, EMR, Databricks job/cluster, History Server.
 
 | Tab | Read |
 | --- | --- |
@@ -27,7 +21,9 @@ Tabs that matter:
 | SQL | Final DAG. `Exchange`, `BroadcastHashJoin` vs `SortMergeJoin`, `FileScan` (pushed filters, read schema), `BatchEvalPython`. Prefer `isFinalPlan=true` if AQE ran. |
 | Executors | Lost executors, GC time, shuffle metrics. |
 
-If you cannot open UI, ask for the job/run URL or a screenshot of Stages + SQL. Do not invent metrics.
+SQL warehouses often show the same stories as a **query profile** (scans, joins, shuffles, rows) instead of the classic Spark UI.
+
+If you cannot open UI, ask for the Spark UI / History / query-profile URL or a screenshot of Stages + SQL. Do not invent metrics.
 
 ## What “fast” looks like
 
