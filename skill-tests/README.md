@@ -1,6 +1,6 @@
 # Skill tests
 
-Batch jobs used with the handbook cluster. The assignment prompt is `TASK.md`.
+Batch jobs used as an eval harness (run the same assignment with and without the packages under `skills/`). The prompt is `TASK.md`.
 
 From the Jupyter container (this is the Mac/Linux Docker path):
 
