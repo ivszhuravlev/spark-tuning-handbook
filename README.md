@@ -63,10 +63,10 @@ Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet.
 
 ## Spark skills (portable)
 
-Performance tuning and debugging packages for any Spark UI / History Server (Genie and other agents). They are not a map of the notebooks.
+Two `SKILL.md` files for Databricks Genie: performance tuning and debugging. Not a map of the notebooks. Markdown only.
 
-- `skills/spark-performance-tuning/`
-- `skills/spark-debugging/`
+- `skills/spark-performance-tuning/SKILL.md`
+- `skills/spark-debugging/SKILL.md`
 
 See `skills/README.md`. `skill-tests/` is a separate eval: same jobs with vs without those packages.
 

@@ -5,24 +5,29 @@ description: Performance-tune Apache Spark and PySpark jobs from the executed ph
 
 # Spark performance tuning
 
-Tune from **runtime evidence**, then code. Wall-clock without a plan is not a diagnosis. Adding executors or memory is the last move, not the first.
+Tune from **runtime evidence**, then code. Wall-clock without a plan is not a diagnosis. Adding workers or memory is the last move, not the first.
 
 Spark executes **jobs → stages → tasks**. An action submits a job. A shuffle (`Exchange`) opens a new stage. One partition in that stage is one task. If you cannot name the expensive stage and why it shuffled, you are not tuning yet.
 
-## Collect evidence
+## Where to look (Databricks)
 
-Live driver UI and History Server share `/api/v1`:
+Use the Spark UI of **this run**, not a guess from source:
 
-```bash
-export SPARK_UI_URL="http://localhost:4040"    # or History: http://localhost:18080
-python3 scripts/spark_ui_snapshot.py apps
-python3 scripts/spark_ui_snapshot.py snapshot --app-id <application-id> > /tmp/spark-tune.json
-python3 scripts/spark_ui_snapshot.py sql --app-id <application-id> --execution-id <n> > /tmp/spark-plan.json
-```
+- Job run → **Spark UI**
+- Interactive cluster → **Spark UI**
+- SQL warehouse → **Query History** → query → **query profile** (same stories: scans, joins, shuffles, rows)
 
-If the URL is unset, try `:4040`, then `:18080`, then the Spark UI link on the Databricks job/cluster, then event-log / history settings. Auth via `SPARK_UI_AUTHORIZATION` (or `SPARK_HISTORY_*`). Do not disable TLS. Do not ask for secrets in chat.
+Tabs that matter:
 
-In `taskSummary`, quantile arrays are `[min, median, p95, p99, max]`. Read the **final** SQL plan (`isFinalPlan=true` when AQE ran). The initial plan is a guess.
+| Tab | Read |
+| --- | --- |
+| Jobs | One action ≈ one job. Duration, failed jobs. |
+| Stages | Task count, shuffle read/write, spill, duration. Open the longest stage. |
+| Stage → Tasks | Duration / shuffle read / input **min vs median vs max**. Max ≫ median is skew. |
+| SQL | Final DAG. `Exchange`, `BroadcastHashJoin` vs `SortMergeJoin`, `FileScan` (pushed filters, read schema), `BatchEvalPython`. Prefer `isFinalPlan=true` if AQE ran. |
+| Executors | Lost executors, GC time, shuffle metrics. |
+
+If you cannot open UI, ask for the job/run URL or a screenshot of Stages + SQL. Do not invent metrics.
 
 ## What “fast” looks like
 
@@ -35,7 +40,7 @@ In `taskSummary`, quantile arrays are `[min, median, p95, p99, max]`. Read the *
 
 ## Tune in this order
 
-1. **Remove invented work.** `explode` / `array_repeat` / unrestricted joins that multiply rows *before* an aggregate or shuffle. If the result grain is the original table, the fan-out is a bug. Check SQL node output rows vs scan rows.
+1. **Remove invented work.** `explode` / `array_repeat` / unrestricted joins that multiply rows *before* an aggregate or shuffle. If the result grain is the original table, the fan-out is a bug. Compare scan rows to rows into the first `Exchange`.
 
 2. **Fix join grain.** Output rows ≫ both inputs → many-to-many (join key too coarse). Join the key that matches the business grain, or pre-aggregate. This beats every later trick.
 
@@ -51,11 +56,11 @@ In `taskSummary`, quantile arrays are `[min, median, p95, p99, max]`. Read the *
 
 6. **Shrink what you shuffle and sort.** Drop columns before the wide op. Partial aggregate before join when the logic allows. Spill with SUCCESS means execution memory filled — reduce state or raise partition count **after** skew is ruled out, then consider memory.
 
-7. **Native expressions over Python.** `BatchEvalPython` is a codegen barrier (row pickle). Pandas/Arrow UDFs are better; SQL/`pyspark.sql.functions` are best. Executors must have the Python packages you call.
+7. **Native expressions over Python.** `BatchEvalPython` is a codegen barrier. Pandas/Arrow UDFs are better; Spark SQL / built-in functions are best. Executors must have the Python packages you call.
 
-8. **AQE last, and only for what it does.** Coalesce tiny shuffle parts, switch SMJ→BHJ when *runtime* size is small, split oversized SMJ partitions. It will not delete a useless explode, a wrong join key, or a Python UDF. This skill assumes you can read a static plan; do not “enable AQE” as a substitute for that.
+8. **AQE last, and only for what it does.** Coalesce tiny shuffle parts, switch SMJ→BHJ when *runtime* size is small, split oversized SMJ partitions. It will not delete a useless explode, a wrong join key, or a Python UDF. Do not “enable AQE” as a substitute for reading the plan.
 
-9. **Cluster resize last.** More executors help when tasks are busy, not skewed, and parallelism is actually capped by cores. More heap helps a uniformly fat partition, not a 100× hot key.
+9. **Cluster resize last.** More workers help when tasks are busy, not skewed, and parallelism is actually capped by cores. More heap helps a uniformly fat partition, not a 100× hot key.
 
 ## Report
 
