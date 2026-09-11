@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC # Batch jobs
 # MAGIC
-# MAGIC Five jobs. Paths are in the widgets. Setup writes run metrics to the output directory.
+# MAGIC Five jobs. Input table and output schema are in the widgets. Setup writes run metrics next to the schema location.
 
 # COMMAND ----------
 
@@ -21,11 +21,11 @@ from pyspark.sql import functions as F
 
 dbutils.widgets.text(
     "txn_path",
-    "dbfs:/FileStore/spark_tuning_test/transaction_cat.parquet",
+    "hive_metastore.spark_tuning_test.transactions",
 )
 dbutils.widgets.text(
     "out_dir",
-    "dbfs:/FileStore/spark_tuning_test/etl-lab-out",
+    "hive_metastore.spark_tuning_test",
 )
 dbutils.widgets.text(
     "jobs_dir",
@@ -63,14 +63,22 @@ _try_set_conf("spark.sql.shuffle.partitions", "8")
 
 # COMMAND ----------
 
-def _path_exists(path):
+def _is_table_name(name):
+    return "/" not in name and not name.startswith("dbfs:")
+
+
+def _schema_location(schema):
     try:
-        return any(True for _ in dbutils.fs.ls(path))
+        for row in spark.sql(f"DESCRIBE DATABASE EXTENDED {schema}").collect():
+            item = str(row[0]).strip().lower()
+            if item in ("location", "locationuri"):
+                return str(row[1]).strip()
     except Exception:
-        return False
+        return None
+    return None
 
 
-def _generate_txn_sample(path, n=200000):
+def _generate_txn_df(n=200000):
     categories = [
         "groceries",
         "restaurants",
@@ -88,7 +96,7 @@ def _generate_txn_sample(path, n=200000):
     cat_arr = F.array(*[F.lit(x) for x in categories])
     country_arr = F.array(*[F.lit(x) for x in countries])
     currency_arr = F.array(*[F.lit(x) for x in currencies])
-    df = (
+    return (
         spark.range(n)
         .withColumn("cidx", (F.rand(42) * len(categories)).cast("int"))
         .withColumn("nidx", (F.rand(43) * len(countries)).cast("int"))
@@ -101,35 +109,42 @@ def _generate_txn_sample(path, n=200000):
         )
         .select("transaction_description", "category", "country", "currency")
     )
-    df.write.mode("overwrite").parquet(path)
-    print(f"wrote sample rows={n} path={path}")
 
 
-def ensure_txn_parquet(path):
-    if _path_exists(path):
-        df = spark.read.parquet(path)
-    else:
-        hms = "hive_metastore.spark_tuning_test.transactions"
+def ensure_txn(name):
+    schema = name.rsplit(".", 1)[0] if _is_table_name(name) and name.count(".") >= 1 else OUT_DIR
+    if _is_table_name(schema):
+        spark.sql(f"CREATE DATABASE IF NOT EXISTS {schema}")
+    if _is_table_name(name):
         try:
-            spark.table(hms).select(*REQUIRED_COLS).write.mode("overwrite").parquet(path)
-            print(f"wrote {path} from {hms}")
-            df = spark.read.parquet(path)
-        except Exception as exc:
-            print(f"table fallback skipped ({type(exc).__name__}: {exc})")
-            _generate_txn_sample(path)
-            df = spark.read.parquet(path)
+            df = spark.table(name)
+        except Exception:
+            _generate_txn_df().write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(name)
+            print(f"wrote table {name}")
+            df = spark.table(name)
+    else:
+        try:
+            df = spark.read.parquet(name)
+        except Exception:
+            _generate_txn_df().write.mode("overwrite").saveAsTable(
+                "hive_metastore.spark_tuning_test.transactions"
+            )
+            df = spark.table("hive_metastore.spark_tuning_test.transactions")
     missing = [c for c in REQUIRED_COLS if c not in df.columns]
     if missing:
-        raise ValueError(f"{path} missing columns {missing}; have {df.columns}")
+        raise ValueError(f"{name} missing columns {missing}; have {df.columns}")
     n = df.count()
+    print("input:", name)
     print("input columns:", df.columns)
     print("input row count:", n)
     df.printSchema()
+    spark.sql(f"SHOW TABLES IN {OUT_DIR}").show(truncate=False)
     return n
 
 
-dbutils.fs.mkdirs(OUT_DIR)
-INPUT_ROWS = ensure_txn_parquet(TXN_PATH)
+if _is_table_name(OUT_DIR):
+    spark.sql(f"CREATE DATABASE IF NOT EXISTS {OUT_DIR}")
+INPUT_ROWS = ensure_txn(TXN_PATH)
 
 # COMMAND ----------
 
@@ -473,9 +488,13 @@ baseline_payload = {
     "jobs": baseline_rows,
 }
 
-metrics_path = f"{OUT_DIR}/baseline_metrics.json"
+_metrics_loc = _schema_location(OUT_DIR) if _is_table_name(OUT_DIR) else OUT_DIR
+if not _metrics_loc:
+    _metrics_loc = "dbfs:/user/hive/warehouse/spark_tuning_test.db"
+metrics_path = _metrics_loc.rstrip("/") + "/baseline_metrics.json"
 dbutils.fs.put(metrics_path, json.dumps(baseline_payload, indent=2, default=str), True)
 print("wrote", metrics_path)
+spark.sql(f"SHOW TABLES IN {OUT_DIR}").show(truncate=False)
 
 baseline_table = spark.createDataFrame(
     [
