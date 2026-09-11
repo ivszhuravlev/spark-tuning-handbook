@@ -1,22 +1,21 @@
-# Agent skills
+# Spark performance tuning and debugging
 
-The packages an agent should load are in **`.cursor/skills/`** (Agent Skills layout: one directory per skill, `SKILL.md` inside).
+Portable agent skills. Attach them to Genie, Claude, Codex, or any harness that loads a `SKILL.md` directory. They are **not** a walkthrough of this repo’s notebooks and they do not mention the eval jobs.
 
-`skill-tests/` is the **eval**: broken-looking batch jobs plus `TASK.md`. It is not the skill library. An agent that only reads `skill-tests/` and never loads `.cursor/skills/` is taking the test without the course.
+Each skill is self-contained (symlink one folder into `~/.claude/skills`, `~/.codex/skills`, `.cursor/skills`, …).
 
-| Directory | Skill | Use when |
-| --- | --- | --- |
-| `.cursor/skills/spark-tuning-handbook/` | router | Spark UI / plans / skill-tests / “which notebook applies” |
-| `.cursor/skills/spark-architecture-execution/` | architecture | jobs, stages, tasks, narrow vs wide, too many tasks |
-| `.cursor/skills/spark-catalyst-planning/` | Catalyst | `explain()`, pushdown, BHJ vs SMJ in the plan |
-| `.cursor/skills/spark-shuffle-joins/` | shuffle & joins | shuffle bytes, skew, join keys, repartition |
-| `.cursor/skills/spark-memory-troubleshooting/` | memory | OOM, spill, `raise_error`, Python UDFs |
-| `.cursor/skills/spark-aqe-operations/` | AQE & ops | AQE, speculation, lineage, static Spark 4 configs |
+| Skill | When to attach |
+| --- | --- |
+| [spark-performance-tuning](spark-performance-tuning/SKILL.md) | Job is too slow or too expensive. Cut shuffle, fix join strategy, partitioning, fan-out, UDFs. |
+| [spark-debugging](spark-debugging/SKILL.md) | Job failed or is pathological. Find the first error: OOM vs spill, task exceptions, driver vs executor, fetch-fail fallout. |
 
-Run the eval:
+Both skills pull a read-only snapshot from the **live Spark UI** (`:4040`) or **History Server** (`:18080`) via `/api/v1` (`scripts/spark_ui_snapshot.py`). Databricks job Spark UI speaks the same API.
 
 ```bash
-docker compose exec jupyter python /skill-tests/launch.py
+export SPARK_UI_URL="http://localhost:4040"
+python3 skills/spark-performance-tuning/scripts/spark_ui_snapshot.py snapshot --app-id <id>
 ```
 
-There is no solution write-up in git. Diagnose from job code, the physical plan, and Spark UI using the skills.
+Auth: `SPARK_UI_AUTHORIZATION` or `SPARK_HISTORY_AUTHORIZATION`. TLS stays verified.
+
+`skill-tests/` in this repository is a separate eval (same jobs with vs without these skills). It is not part of the skill packages.
