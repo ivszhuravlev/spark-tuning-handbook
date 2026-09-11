@@ -10,6 +10,6 @@ docker compose exec jupyter python /skill-tests/launch.py
 
 Or open `run_skill_tests.ipynb` in JupyterLab. Spark UI: http://localhost:4040 while the session is alive.
 
-Load the handbook agent skills in `.cursor/skills/` (router: `spark-tuning-handbook`, then the topic skills). Use notebooks **01–05** the same way: jobs, stages, tasks, plans, join strategy, partitioning, memory, AQE, failures. Fix the jobs. Re-run until runtimes are reasonable, stage/task shape looks healthy, and nothing fails unexpectedly.
+Use the Spark UI and the physical plan. Fix the jobs. Re-run until runtimes are reasonable, stage/task shape looks healthy, and nothing fails unexpectedly.
 
 Do not expect a solution write-up in this repository. Diagnose from the job code, the physical plan, and the Spark UI.
