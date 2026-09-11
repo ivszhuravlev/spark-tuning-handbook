@@ -7,3 +7,6 @@ USER root
 # the previous multiline `bash -c` command dropped `--master` as a separate
 # shell line when pip failed.
 RUN pip install --no-cache-dir jupyterlab pandas pyarrow numpy
+
+# Workers use this same image; Jupyter Compose service overrides user to root.
+USER spark

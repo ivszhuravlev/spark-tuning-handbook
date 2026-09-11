@@ -7,18 +7,18 @@ Each topic is explored with real data in Jupyter notebooks connected to a local 
 
 ## Datasets
 
-Experiments use public data from Hugging Face and NYC TLC:
+Experiments use these sources:
 
-Transaction Categorization
+Transaction Categorization (Hugging Face, **gated** — accept terms and `hf auth login`)
 https://huggingface.co/datasets/mitulshah/transaction-categorization
 
-FreshRetailNet-50K (Retail Sales)
-https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
-
-NYC Yellow Taxi Trip Records (2024)
+NYC Yellow Taxi Trip Records (2024, public TLC files)
 https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 
-Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet. The retail file is optional and is not required to finish the course.
+FreshRetailNet-50K (Hugging Face, optional; notebooks 01-05 do not read it)
+https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
+
+Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet. Schema-compatible samples from `scripts/prepare_local_data.py` are enough to finish the course.
 
 ---
 
@@ -73,7 +73,9 @@ Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet.
 
 ## Mac / Linux: Docker
 
-Runs a full Standalone cluster (master + 2 workers + JupyterLab) in Docker. No local Java or Spark install on the Mac. Apple Silicon (M1/M2/M3/M4) uses the `linux/amd64` Spark image via Docker Desktop (Rosetta/qemu). Give Docker Desktop **at least 8 GB RAM**.
+Runs a full Standalone cluster (master + 2 workers + JupyterLab) in Docker. No local Java or Spark install on the Mac. The `apache/spark:4.0.2-python3` image publishes `linux/arm64`, so Apple Silicon runs natively. Give Docker Desktop **at least 8 GB RAM**.
+
+JupyterLab has **no token** (`ServerApp.token` is empty). Use it only on localhost.
 
 Do **not** attach a Mac-native PySpark driver to the Docker master. Executors run in worker containers and must open RPC back to the driver; that only works when the driver is the Jupyter container (`spark.driver.host=spark-jupyter`). Run notebooks and jobs from JupyterLab or `docker compose exec jupyter ...`.
 
@@ -141,7 +143,7 @@ data/
     └── yellow_tripdata_2024-01.parquet     # optional real TLC files
 ```
 
-Download Hugging Face datasets with `hf` (run `hf auth login` first if needed, and accept gated-dataset terms):
+Download Hugging Face datasets with `hf` (`python -m pip install huggingface_hub`, then `hf auth login`, and accept gated-dataset terms):
 
 ```bash
 hf download \
@@ -181,7 +183,7 @@ Assignment for a separate pass over the cluster: `skill-tests/TASK.md`. Run from
 
 - Master UI shows 0 workers: wait ~20s for the healthcheck, then `docker compose logs spark-worker-1`.
 - Notebook actions hang on "connecting to driver": confirm you are running inside Jupyter/the `jupyter` container, not a Mac-native `pyspark`.
-- Apple Silicon image pull is slow the first time (`linux/amd64` emulation).
+- Apple Silicon uses the native `linux/arm64` Spark image; first pull can still take a few minutes.
 - `docker compose` cannot bind 8888/8080/4040: stop other stacks or change ports in `.env`.
 
 ---
@@ -198,7 +200,7 @@ Prefer **Spark 4.0.2** so this matches the Mac/Linux Docker course. 4.1.1 also r
 - Python 3.10+
 - JupyterLab and pandas:
   ```powershell
-  python -m pip install jupyterlab pandas pyarrow
+  python -m pip install jupyterlab pandas pyarrow numpy
   ```
 
 ### Download Spark
@@ -251,7 +253,11 @@ cd C:\path\to\your\project
 $env:PYSPARK_DRIVER_PYTHON = "jupyter"
 $env:PYSPARK_DRIVER_PYTHON_OPTS = "lab"
 
-pyspark --master spark://localhost:7077 --conf spark.sql.catalogImplementation=hive
+pyspark --master spark://localhost:7077 `
+  --conf spark.sql.catalogImplementation=hive `
+  --conf spark.sql.adaptive.enabled=false `
+  --conf spark.sql.shuffle.partitions=8 `
+  --conf spark.executor.memory=2g
 ```
 
 Spark UI (after PySpark starts): [http://localhost:4040](http://localhost:4040)

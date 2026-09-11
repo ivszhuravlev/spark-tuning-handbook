@@ -1,7 +1,6 @@
 services:
   spark-master:
     image: apache/spark:4.0.2-python3
-    platform: linux/amd64
     container_name: spark-master
     hostname: spark-master
     environment:
@@ -34,8 +33,10 @@ services:
       start_period: 10s
 
   spark-worker-1:
-    image: apache/spark:4.0.2-python3
-    platform: linux/amd64
+    build:
+      context: ./docker/jupyter
+      dockerfile: Dockerfile
+    image: spark-handbook-jupyter:4.0.2
     hostname: spark-worker-1
     environment:
       SPARK_LOCAL_HOSTNAME: spark-worker-1
@@ -60,8 +61,10 @@ services:
       - spark-warehouse:/opt/spark/work-dir/spark-warehouse
 
   spark-worker-2:
-    image: apache/spark:4.0.2-python3
-    platform: linux/amd64
+    build:
+      context: ./docker/jupyter
+      dockerfile: Dockerfile
+    image: spark-handbook-jupyter:4.0.2
     hostname: spark-worker-2
     environment:
       SPARK_LOCAL_HOSTNAME: spark-worker-2
@@ -90,7 +93,6 @@ services:
       context: ./docker/jupyter
       dockerfile: Dockerfile
     image: spark-handbook-jupyter:4.0.2
-    platform: linux/amd64
     container_name: spark-jupyter
     hostname: spark-jupyter
     user: root
@@ -109,9 +111,15 @@ services:
       - --conf
       - spark.sql.catalogImplementation=hive
       - --conf
+      - spark.sql.warehouse.dir=/opt/spark/work-dir/spark-warehouse
+      - --conf
+      - spark.hadoop.javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=/opt/spark/work-dir/metastore_db;create=true
+      - --conf
       - spark.sql.adaptive.enabled=false
       - --conf
       - spark.sql.shuffle.partitions=8
+      - --conf
+      - spark.executor.memory=2g
       - --conf
       - spark.driver.host=spark-jupyter
       - --conf

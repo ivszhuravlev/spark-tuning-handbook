@@ -18,7 +18,7 @@ import pyarrow.parquet as pq
 
 def build_table(n: int, seed: int, start: datetime) -> pa.Table:
     rng = np.random.default_rng(seed)
-    pickup_off = rng.integers(0, 28 * 24 * 3600, size=n)
+    pickup_off = rng.integers(0, 366 * 24 * 3600, size=n)
     trip_secs = rng.integers(60, 3600, size=n)
     pickup = np.array(
         [start + timedelta(seconds=int(s)) for s in pickup_off],

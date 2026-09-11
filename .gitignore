@@ -5,3 +5,6 @@ metastore_db/
 __pycache__/
 derby.log
 skill-tests/ANSWER_KEY.md
+skill-tests/workloads_fixed/
+skill-tests/local/
+skill-tests/bench-out/

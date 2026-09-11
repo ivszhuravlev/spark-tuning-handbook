@@ -20,16 +20,30 @@ MAGIC = re.compile(r"^%%\w+.*\n", re.M)
 
 def create_spark(app_name: str):
     from pyspark.sql import SparkSession
+    import socket
 
-    master = os.getenv("SPARK_MASTER", "spark://localhost:7077")
+    master = os.getenv("SPARK_MASTER")
+    if not master:
+        try:
+            socket.getaddrinfo("spark-master", 7077)
+            master = "spark://spark-master:7077"
+        except OSError:
+            master = "spark://127.0.0.1:7077"
     builder = (
         SparkSession.builder.appName(app_name)
         .master(master)
         .config("spark.sql.adaptive.enabled", "false")
         .config("spark.sql.shuffle.partitions", "8")
         .config("spark.sql.catalogImplementation", "hive")
+        .config("spark.sql.warehouse.dir", os.getenv("SPARK_WAREHOUSE", "/opt/spark/work-dir/spark-warehouse"))
+        .config("spark.executor.memory", os.getenv("SPARK_EXECUTOR_MEMORY", "2g"))
         .config("spark.ui.port", os.getenv("SPARK_APP_UI_PORT", "4040"))
     )
+    driver_host = os.getenv("SPARK_DRIVER_HOST")
+    if driver_host:
+        builder = builder.config("spark.driver.host", driver_host).config(
+            "spark.driver.bindAddress", os.getenv("SPARK_DRIVER_BIND", "0.0.0.0")
+        )
     return builder.getOrCreate()
 
 
