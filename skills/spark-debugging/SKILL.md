@@ -7,15 +7,13 @@ description: Debug failed or pathological Apache Spark and PySpark applications 
 
 Find the **first** error that explains the rest. Later fetch-failed, timeout, and “executor lost” lines are usually debris. Configuration is intent. Task metrics, plan nodes, and logs are behavior.
 
-## Where to look (Databricks)
+## Where to look
 
-- Failed **job run** → Spark UI → Jobs (failed) → stage → **Tasks** (error message, partition index, attempt, host).
-- Cluster **Event log** / driver log for the first exception (driver crash can show **zero** failed Spark jobs).
-- **Executors** tab: who died, remove reason, GC.
-- **SQL** tab: `raise_error`, `BatchEvalPython`, the operator that was running when it died.
-- SQL warehouse: Query History → failed query → profile + error.
+Spark UI of the failed app (live driver UI or History Server): Jobs → failed stage → **Tasks** (error message, partition index, attempt, host). Same UI on standalone, YARN, Kubernetes, EMR, Databricks. SQL warehouses: failed query → profile + error.
 
-If UI is not attached, ask for the run URL or the error + stage/task screenshot. Do not guess.
+Also: driver log / cluster events for the first exception (a driver crash can show **zero** failed Spark jobs). **Executors** tab: who died, remove reason, GC. **SQL** tab: `raise_error`, `BatchEvalPython`, the operator that was running when it died.
+
+If UI is not available, ask for the Spark UI / History URL or the error + stage/task screenshot. Do not guess.
 
 ## Classify the failure
 
