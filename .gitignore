@@ -10,5 +10,3 @@ skill-tests/local/
 skill-tests/bench-out/
 **/*.local.md
 databricks/etl-lab/TEST_RECORD.local.md
-databricks/product-etl/_staff/ANSWER.local.md
-databricks/product-etl/**/*.local.md
