@@ -103,7 +103,6 @@ services:
       SPARK_DRIVER_HOST: spark-jupyter
       SPARK_MASTER: spark://spark-master:7077
       SPARK_TUNING_DATA_DIR: /data
-      SKILL_TEST_OUT: /data/tmp/skill-tests-out
     entrypoint: ["/opt/spark/bin/pyspark"]
     command:
       - --master
@@ -130,8 +129,6 @@ services:
     volumes:
       - ./notebooks:/notebooks
       - ./data:/data
-      - ./skill-tests:/skill-tests
-      - ./scripts:/scripts
       - spark-warehouse:/opt/spark/work-dir/spark-warehouse
       - hive-metastore:/opt/spark/work-dir/metastore_db
     working_dir: /notebooks

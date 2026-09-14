@@ -18,7 +18,7 @@ https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page
 FreshRetailNet-50K (Hugging Face, optional; notebooks 01-05 do not read it)
 https://huggingface.co/datasets/Dingdong-Inc/FreshRetailNet-50K
 
-Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet. Schema-compatible samples from `scripts/prepare_local_data.py` are enough to finish the course.
+Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet. Schema-compatible samples from `data/prepare_local_data.py` are enough to finish the course.
 
 ---
 
@@ -60,15 +60,6 @@ Notebooks 01-02 read the transaction parquet. Notebooks 03-05 read taxi parquet.
 ---
 
 **Note**: Adaptive Query Execution (AQE) is a runtime optimization layer on top of Spark’s core physical execution model. We deliberately study Spark with AQE disabled initially to build a deterministic understanding of how plans are generated and executed. AQE can improve performance in many cases, but it does not replace the need to understand fundamental execution mechanisms such as shuffle, partitioning, join strategies, and resource behavior.
-
-## Spark skills (portable)
-
-Two `SKILL.md` files for Spark performance tuning and debugging (any Spark UI). Not a map of the notebooks. Markdown only.
-
-- `skills/spark-performance-tuning/SKILL.md`
-- `skills/spark-debugging/SKILL.md`
-
-See `skills/README.md`. `skill-tests/` is a separate eval: same jobs with vs without those packages.
 
 ## Environment
 
@@ -115,7 +106,7 @@ docker compose ps
 From the Jupyter container (uses the image Python, no host packages):
 
 ```bash
-docker compose exec jupyter python /scripts/prepare_local_data.py
+docker compose exec jupyter python /data/prepare_local_data.py
 ```
 
 This writes schema-compatible `data/transaction_cat.parquet` and `data/taxi/*.parquet` on the bind mount. Saved notebook outputs were captured on larger files, so row counts and timings will differ.
@@ -132,7 +123,7 @@ docker compose down
 docker compose logs -f           # tail all container logs
 docker compose exec jupyter bash # shell inside Jupyter container
 docker compose ps                # show running containers
-docker compose exec jupyter python /skill-tests/launch.py
+docker compose exec jupyter python /data/prepare_local_data.py
 ```
 
 ### Datasets
@@ -183,10 +174,6 @@ for m in $(seq -w 1 12); do
     "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-${m}.parquet"
 done
 ```
-
-### Skill-test jobs
-
-Eval harness (same assignment with vs without `skills/`). Prompt: `skill-tests/TASK.md`. Run from the Jupyter container so the driver stays on the Compose network.
 
 ### Troubleshooting (Mac)
 

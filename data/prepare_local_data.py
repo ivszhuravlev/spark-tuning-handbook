@@ -13,7 +13,8 @@ import runpy
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
 
 
 def _run(script: Path, argv: list[str]) -> None:
@@ -40,7 +41,7 @@ def main() -> None:
 
     if args.force or not txn.exists():
         _run(
-            ROOT / "scripts" / "generate_transaction_cat_sample.py",
+            HERE / "generate_transaction_cat_sample.py",
             ["--out", str(txn), "--rows", str(args.txn_rows)],
         )
     else:
@@ -49,7 +50,7 @@ def main() -> None:
     taxi_files = list(taxi_dir.glob("*.parquet")) if taxi_dir.exists() else []
     if args.force or not taxi_files:
         _run(
-            ROOT / "scripts" / "generate_taxi_sample.py",
+            HERE / "generate_taxi_sample.py",
             ["--out-dir", str(taxi_dir), "--rows", str(args.taxi_rows)],
         )
     else:
